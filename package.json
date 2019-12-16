@@ -1,0 +1,16 @@
+{
+  "name": "data-stax-hosting",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@silvermine/serverless-plugin-cloudfront-lambda-edge": "2.1.1",
+    "prettier": "^1.19.1",
+    "serverless-finch": "^2.5.2"
+  }
+}

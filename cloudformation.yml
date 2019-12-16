@@ -1,0 +1,73 @@
+Resources:
+  ClientBucketResource:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ${self:custom.client.bucketName}
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+  ClientBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: ${self:custom.client.bucketName}
+      PolicyDocument:
+        Statement:
+          - Sid: OAIGetObject
+            Effect: Allow
+            Principal:
+              AWS:
+                Fn::Join:
+                  - " "
+                  - - arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
+                    - Ref: S3OriginAccessIdentity
+            Action:
+              - s3:GetObject
+            Resource:
+              Fn::Join:
+                - ""
+                - - "arn:aws:s3:::"
+                  - Ref: ClientBucketResource
+                  - "/*"
+  S3OriginAccessIdentity:
+    Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: Serverless managed web app S3 bucket origin-access-identity
+  ApiDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: WebApp
+            DomainName:
+              Fn::GetAtt: [ClientBucketResource, DomainName]
+            S3OriginConfig:
+              OriginAccessIdentity:
+                Fn::Join:
+                  - ""
+                  - - origin-access-identity/cloudfront/
+                    - Ref: S3OriginAccessIdentity
+        Enabled: true
+        HttpVersion: http2
+        DefaultRootObject: index.html
+        CustomErrorResponses:
+          - ErrorCachingMinTTL: 10
+            ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: "/index.html"
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          TargetOriginId: WebApp
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          ViewerProtocolPolicy: redirect-to-https
+        Logging:
+          IncludeCookies: false
+          Bucket: ""
+          Prefix: ""

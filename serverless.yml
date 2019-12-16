@@ -1,0 +1,53 @@
+service: data-stax-hosting
+
+custom:
+  client:
+    manageResources: false
+    bucketName: wizard-poc-hosting
+    distributionFolder: client-build
+    objectHeaders:
+      "**/*.js":
+        - name: "Cache-Control"
+          value: "max-age=31536000"
+        - name: "Content-Type"
+          value: "text/js"
+      "**/*.css":
+        - name: "Cache-Control"
+          value: "max-age=31536000"
+        - name: "Content-Type"
+          value: "text/css"
+      "**/*.html":
+        - name: "Cache-Control"
+          value: "max-age=10"
+        - name: "Content-Type"
+          value: "text/html"
+    uploadOrder:
+      - .*
+      - service-worker\.js
+      - index\.html
+provider:
+  name: aws
+  runtime: nodejs10.x
+
+package:
+   exclude:
+      - 'node_modules/**'
+      - 'client-build/**/*'
+      - 'package-lock.json'
+      - 'package.json' 
+      - 'cloudformation.yml'
+
+functions:
+  authenticate:
+    handler: handler.authenticate
+    memorySize: 128
+    timeout: 1
+    lambdaAtEdge:
+      distribution: 'ApiDistribution'
+      eventType: 'viewer-request'
+
+resources: ${file(./cloudformation.yml)}
+
+plugins:
+  - serverless-finch
+  - '@silvermine/serverless-plugin-cloudfront-lambda-edge'
